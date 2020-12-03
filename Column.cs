@@ -173,7 +173,7 @@ namespace DataExportImport
 			var nullable = IsNullable ? "Nullable" : null;
 			var comment = IsIdentity ? " [Identity]" : null;
 
-			sb.AppendLine($"runRow.WriteBinary{TypeName}{nullable}({TableOrdinal}, bw); // {Name}{comment}");
+			sb.AppendLine($"reader.WriteBinary{TypeName}{nullable}({TableOrdinal}, bw); // {Name}{comment}");
 		}
 
 		public void GenWriteDefaultValueIfNotMatched(StringBuilder sb)

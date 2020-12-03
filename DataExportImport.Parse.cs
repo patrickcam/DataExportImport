@@ -29,7 +29,7 @@ namespace DataExportImport
 		{
 			TraceLog.Console($"Parsing command file [{fileName}]");
 
-			Lines lines = null;
+			Lines currentKeywordLines = null;
 
 			var keywords = SetupKeywords();
 
@@ -54,14 +54,14 @@ namespace DataExportImport
 					{
 						var kwd = line.Trim(MarkKeywordChar, ' ').ToLower();
 
-						if (!keywords.TryGetValue(kwd, out lines))
+						if (!keywords.TryGetValue(kwd, out currentKeywordLines))
 						{
 							throw new TraceLog.InternalException($"No such keyword: [{kwd}]");
 						}
 					}
 					else
 					{
-						lines?.Add(line);
+						currentKeywordLines?.Add(line);
 					}
 				}
 			}

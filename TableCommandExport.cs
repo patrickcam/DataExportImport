@@ -66,7 +66,7 @@ namespace DataExportImport
 
 			protected override void GenDynamicMethod(StringBuilder sb)
 			{
-				sb.AppendLine(@"public static void DynamicMethod(SqlDataReader runRow, BinaryWriter bw)");
+				sb.AppendLine(@"public static void DynamicMethod(SqlDataReader reader, BinaryWriter bw)");
 				sb.AppendLine("{");
 
 				TableColumns.ForEach(c => c.GenWriteBinary(sb));
@@ -74,7 +74,7 @@ namespace DataExportImport
 				sb.AppendLine("}");
 			}
 
-			private delegate void DynamicMethodDelegate(SqlDataReader runRow, BinaryWriter bw);
+			private delegate void DynamicMethodDelegate(SqlDataReader reader, BinaryWriter bw);
 
 			public override int ExecInner(MethodInfo methodInfo)
 			{
@@ -88,15 +88,15 @@ namespace DataExportImport
 				using (var gZipStream = new GZipStream(fileStream, CompressionMode.Compress))
 				using (var bufferedStream = new BufferedStream(gZipStream, BufferSize))
 				using (var bw = new BinaryWriter(bufferedStream))
-				using (var runRow = _sourceSqlCommand.ExecuteReader())
+				using (var reader = _sourceSqlCommand.ExecuteReader())
 				{
 					WriteFileHeader(bw);
 
-					while (runRow.Read())
+					while (reader.Read())
 					{
 						bw.Write(recIdx++);
 
-						writeRow(runRow, bw);
+						writeRow(reader, bw);
 
 						if (recIdx % LogRecordCountEvery == 0)
 						{
@@ -104,7 +104,7 @@ namespace DataExportImport
 						}
 					}
 
-					bw.Write(int.MaxValue);
+					bw.Write(EofIndex);
 				}
 
 				return recIdx;

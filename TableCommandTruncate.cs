@@ -2,7 +2,7 @@
 {
 	public static partial class DataExportImport
 	{
-		internal class TableCommandTruncate : TableCommandDelete
+		internal class TableCommandTruncate : TableCommandStatement
 		{
 			protected override string Keyword => "Truncate";
 

@@ -121,10 +121,10 @@ namespace DataExportImport
 			{
 				TraceLog.Console($"Importing table {FullyQualifiedTableName}");
 
-				var readRow = (DynamicMethodDelegate)methodInfo.CreateDelegate(typeof(DynamicMethodDelegate));
+				var ReadRowDynamic = (DynamicMethodDelegate)methodInfo.CreateDelegate(typeof(DynamicMethodDelegate));
 
-				var commitBatchCnt = 0;
-				var chkIdx = -1;
+				var batchRecCnt = 0;
+				var readRecIdx = -1;
 
 				using (var fileStream = new FileStream(DataFileName, FileMode.Open))
 				using (var gZipStream = new GZipStream(fileStream, CompressionMode.Decompress))
@@ -135,57 +135,53 @@ namespace DataExportImport
 
 					while (true)
 					{
-						var recIdx = br.ReadInt32();
+						readRecIdx++;
+						batchRecCnt++;
 
-						if (recIdx == int.MaxValue)
+						var recIdx = br.ReadInt32();
+						if (recIdx == EofIndex)
 						{
 							break;
 						}
-
-						if (recIdx != ++chkIdx)
+						if (recIdx != readRecIdx)
 						{
-							throw new TraceLog.InternalException($"Record index out of sync, expected:{chkIdx}, received:{recIdx}");
+							throw new TraceLog.InternalException($"Record index out of sync, expected:{readRecIdx}, received:{recIdx}");
 						}
 
 						var newRow = _destDataTable.NewRow();
 
-						readRow(newRow, br);
+						ReadRowDynamic(newRow, br);
 
 						_destDataTable.Rows.Add(newRow);
 
-						commitBatchCnt++;
-
-						if (commitBatchCnt == CommitEvery)
+						if (batchRecCnt == CommitEvery)
 						{
-							TraceLog.Console($"Commit: {commitBatchCnt}, records: {recIdx + 1}");
-
-							using (var sqlTxn = GetSqlConnection().BeginTransaction())
-							{
-								_destDataTable.WriteToServer(sqlTxn, _columnMappings);
-								sqlTxn.Commit();
-
-								_destDataTable.Clear();
-							}
-
-							commitBatchCnt = 0;
+							WriteBatch(batchRecCnt, readRecIdx);
+							batchRecCnt = 0;
 						}
 					}
 
-					if (commitBatchCnt != 0)
+					if (batchRecCnt != 0)
 					{
-						TraceLog.Console($"Commit: {commitBatchCnt}");
-
-						using (var sqlTxn = GetSqlConnection().BeginTransaction())
-						{
-							_destDataTable.WriteToServer(sqlTxn, _columnMappings);
-							sqlTxn.Commit();
-						}
+						WriteBatch(batchRecCnt, readRecIdx);
 					}
 
-					return chkIdx + 1;
+					return readRecIdx + 1;
 				}
 			}
 
+			private void WriteBatch(int commitBatchCnt, int recIdx)
+			{
+				TraceLog.Console($"Commit: {commitBatchCnt}, records: {recIdx + 1}");
+
+				using (var sqlTxn = GetSqlConnection().BeginTransaction())
+				{
+					_destDataTable.WriteToServer(sqlTxn, _columnMappings);
+					sqlTxn.Commit();
+
+					_destDataTable.Clear();
+				}
+			}
 		}
 	}
 }

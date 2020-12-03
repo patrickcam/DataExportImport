@@ -14,6 +14,7 @@ namespace DataExportImport
 		internal abstract partial class TableCommand : Command
 		{
 			protected const long FileCheckMark = 868244108L;
+			protected const int EofIndex = int.MaxValue;
 			protected const int BufferSize = 0x20000;
 
 			protected string SchemaName;

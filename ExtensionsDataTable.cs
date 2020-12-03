@@ -131,15 +131,15 @@ namespace DataExportImport
 		{
 			var stmt = $"SELECT [name] FROM [sys].[computed_columns] WHERE object_id = OBJECT_ID('{dataTable.TableName}')";
 			using (var useCmd = new SqlCommand(stmt, sqlCcn) { CommandTimeout = DataExportImport.TimeoutSecRead })
-			using (var runRow = useCmd.ExecuteReader())
+			using (var reader = useCmd.ExecuteReader())
 			{
-				while (runRow.Read())
+				while (reader.Read())
 				{
-					runRow.Set(out string columnName, 0);
+					reader.Set(out string columnName, 0);
 					dataTable.RemoveColumn(columnName);
 				}
 
-				runRow.Close();
+				reader.Close();
 			}
 		}
 
